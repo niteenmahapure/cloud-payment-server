@@ -1,6 +1,6 @@
-const express = require("express");
-const cors = require("cors");
-const { Pool } = require("pg");
+const express = require('express');
+const cors = require('cors');
+const { Pool } = require('pg');
 
 const app = express();
 app.use(cors());
@@ -13,61 +13,57 @@ const pool = new Pool({
 });
 
 // ✅ Health check
-app.get("/", (req, res) => {
+app.get('/', (req, res) => {
   res.json({
-    status: "OK",
-    message: "Cloud Payment Server Running"
+    status: 'OK',
+    message: 'Cloud Payment Server Running'
   });
 });
 
-// ✅ CREATE PAYMENT (POST /payments)
-app.post("/payments", async (req, res) => {
+// ✅ STEP 10 — CREATE PAYMENT
+app.post('/payments', async (req, res) => {
   try {
-    const {
-      client_name,
-      phone,
-      amount,
-      rm_name,
-      screenshot_url
-    } = req.body;
-
-    if (!client_name || !phone || !amount) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+    const { client_name, phone, amount, rm_name, screenshot_url } = req.body;
 
     const result = await pool.query(
       `INSERT INTO payments 
-      (client_name, phone, amount, rm_name, screenshot_url)
-      VALUES ($1, $2, $3, $4, $5)
+      (client_name, phone, amount, rm_name, screenshot_url) 
+      VALUES ($1, $2, $3, $4, $5) 
       RETURNING *`,
       [client_name, phone, amount, rm_name, screenshot_url]
     );
 
     res.status(201).json({
-      status: "success",
+      status: 'success',
       data: result.rows[0]
     });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Database insert failed" });
+    res.status(500).json({ error: 'Failed to create payment' });
   }
 });
 
-// ✅ GET ALL PAYMENTS (Admin)
-app.get("/payments", async (req, res) => {
+// ✅ STEP 11 — GET ALL PAYMENTS (ADMIN)
+app.get('/payments', async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM payments ORDER BY created_at DESC"
+      'SELECT * FROM payments ORDER BY created_at DESC'
     );
-    res.json(result.rows);
+
+    res.json({
+      status: 'success',
+      data: result.rows
+    });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Database fetch failed" });
+    res.status(500).json({ error: 'Failed to fetch payments' });
   }
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log("🚀 Server running on port", PORT);
+  console.log('🚀 Server started on port', PORT);
 });
