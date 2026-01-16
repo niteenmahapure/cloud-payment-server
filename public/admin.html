@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Payment Verification - Admin</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  padding: 20px;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+.card {
+  background: #fff;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.08);
+}
+
+.row {
+  margin: 6px 0;
+}
+
+img {
+  width: 200px;
+  border-radius: 8px;
+  margin-top: 10px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.actions {
+  margin-top: 12px;
+}
+
+button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+.approve { background: #22c55e; color: white; }
+.reject { background: #ef4444; color: white; }
+
+.status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+.Pending { background: #fde68a; }
+.Approved { background: #bbf7d0; }
+.Rejected { background: #fecaca; }
+</style>
+</head>
+
+<body>
+
+<h1>Payment Verification - Admin</h1>
+<div id="payments">Loading payments...</div>
+
+<script>
+async function loadPayments() {
+  const res = await fetch("/payments");
+  const json = await res.json();
+
+  const container = document.getElementById("payments");
+  container.innerHTML = "";
+
+  json.data.forEach(p => {
+    container.innerHTML += `
+      <div class="card">
+        <div class="row"><b>ID:</b> ${p.id}</div>
+        <div class="row"><b>Name:</b> ${p.client_name || "-"}</div>
+        <div class="row"><b>Phone:</b> ${p.phone}</div>
+        <div class="row"><b>Amount:</b> ₹${p.amount}</div>
+
+        <div class="row">
+          <b>Status:</b>
+          <span class="status ${p.status}">${p.status}</span>
+        </div>
+
+        ${p.screenshot_url ? `
+          <img src="${p.screenshot_url}"
+               onclick="window.open('${p.screenshot_url}','_blank')" />
+        ` : "<p>No screenshot</p>"}
+
+        <div class="actions">
+          <button class="approve"
+            onclick="updateStatus(${p.id}, 'Approved')">Approve</button>
+
+          <button class="reject"
+            onclick="updateStatus(${p.id}, 'Rejected')">Reject</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+async function updateStatus(id, status) {
+  await fetch(`/payments/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status })
+  });
+  loadPayments();
+}
+
+loadPayments();
+</script>
+
+</body>
+</html>
