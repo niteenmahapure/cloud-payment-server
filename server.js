@@ -67,3 +67,38 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log('🚀 Server started on port', PORT);
 });
+
+// ✅ STEP 12 — UPDATE PAYMENT STATUS (APPROVE / REJECT)
+app.put('/payments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['Approved', 'Rejected', 'Pending'].includes(status)) {
+      return res.status(400).json({
+        error: 'Invalid status value'
+      });
+    }
+
+    const result = await pool.query(
+      `UPDATE payments 
+       SET status = $1 
+       WHERE id = $2 
+       RETURNING *`,
+      [status, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    res.json({
+      status: 'success',
+      data: result.rows[0]
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update payment status' });
+  }
+});
